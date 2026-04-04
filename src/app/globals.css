@@ -1,0 +1,843 @@
+@import "tailwindcss";
+
+/* ========================================
+   CINETYPE — Self-hosted (place .woff2 files in public/fonts/)
+   ======================================== */
+@font-face {
+  font-family: "Cinetype";
+  src: url("/fonts/GT-Cinetype-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cinetype";
+  src: url("/fonts/GT-Cinetype-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cinetype";
+  src: url("/fonts/GT-Cinetype-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ========================================
+   BRAND TOKENS — MultiplAI Design System
+   ======================================== */
+@theme inline {
+  /* Core palette */
+  --color-obsidian: #14141C;
+  --color-eggplant: #31263B;
+  --color-dusty-plum: #6B5A78;
+  --color-muted-plum: #89828d;
+  --color-blush-paper: #F7F2F0;
+  --color-canvas: #FFFCFC;
+  --color-blush-cream: #F2EDEB;
+  --color-opal: #FBF9F9;
+
+  /* Accent */
+  --color-amethyst: #A477B2;
+  --color-warm-stone: #C4B9A8;
+  --color-soft-taupe: #A89B8C;
+  --color-faded-mauve: #B8A3C0;
+  --color-pale-lilac: #E8DFF0;
+
+  /* Borders */
+  --color-mist: #E8E3E1;
+
+  /* Feedback */
+  --color-success: #5C8A6B;
+  --color-warning: #B89B5E;
+  --color-error: #A85C5C;
+  --color-info: #5C7A8A;
+
+  /* Typography */
+  --font-display: "Cinetype", "Playfair Display", Georgia, serif;
+  --font-body: "PT Sans Narrow", "Inter", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", Menlo, Consolas, monospace;
+
+  /* Layout */
+  --max-width-content: 1200px;
+}
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-eggplant);
+  background: var(--color-blush-paper);
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Layer 1: Paper grain — fixed noise overlay */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* Layer 2: Dot grid — fixed overlay on top of everything */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(circle, #31263B 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+  opacity: 0.055;
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* ========================================
+   SECTION DOT GRIDS — Localized density variations with radial fade
+   ======================================== */
+
+/* Dense dot cluster — fades from center outward */
+.dot-grid-center {
+  position: relative;
+}
+.dot-grid-center::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, #31263B 0.4px, transparent 0.4px);
+  background-size: 16px 16px;
+  mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 0%, transparent 70%);
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Fine crosshatch grid — fades from top */
+.dot-grid-top-fade {
+  position: relative;
+}
+.dot-grid-top-fade::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, #31263B 0.35px, transparent 0.35px),
+    linear-gradient(to right, rgba(49,38,59,0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(49,38,59,0.03) 1px, transparent 1px);
+  background-size: 20px 20px, 40px 40px, 40px 40px;
+  mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 80%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 80%);
+  opacity: 0.07;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Sparse dot grid — fades from bottom-right corner */
+.dot-grid-corner {
+  position: relative;
+}
+.dot-grid-corner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, #31263B 0.5px, transparent 0.5px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 70% 70% at 85% 80%, black 0%, transparent 60%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 70% at 85% 80%, black 0%, transparent 60%);
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Tight grid with horizontal line accents — fades from edges inward */
+.dot-grid-edges {
+  position: relative;
+}
+.dot-grid-edges::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, #31263B 0.3px, transparent 0.3px),
+    linear-gradient(to bottom, rgba(49,38,59,0.025) 1px, transparent 1px);
+  background-size: 14px 14px, 14px 14px;
+  mask-image: linear-gradient(to right,
+    black 0%, transparent 15%,
+    transparent 85%, black 100%);
+  -webkit-mask-image: linear-gradient(to right,
+    black 0%, transparent 15%,
+    transparent 85%, black 100%);
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Dark section dot grid — lighter dots for dark backgrounds */
+.dot-grid-dark {
+  position: relative;
+}
+.dot-grid-dark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(247,242,240,0.12) 0.4px, transparent 0.4px);
+  background-size: 18px 18px;
+  mask-image: radial-gradient(ellipse 50% 60% at 50% 40%, black 0%, transparent 65%);
+  -webkit-mask-image: radial-gradient(ellipse 50% 60% at 50% 40%, black 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ========================================
+   PAGE FRAME — Architectural border with hash texture (hex.tech-inspired)
+   ======================================== */
+.page-frame {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  border: 1.5px solid rgba(49, 38, 59, 0.18);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow:
+    inset 0 0 0 1px rgba(49, 38, 59, 0.04),
+    inset 0 0 40px rgba(49, 38, 59, 0.02);
+}
+
+/* Tick marks / hash texture along the frame border */
+.page-frame-texture {
+  position: absolute;
+  inset: 0;
+}
+
+/* Top edge — tiny vertical tick marks */
+.page-frame-texture::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 32px;
+  right: 32px;
+  height: 6px;
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(49, 38, 59, 0.18) 0px,
+    rgba(49, 38, 59, 0.18) 0.5px,
+    transparent 0.5px,
+    transparent 16px
+  );
+  mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+}
+
+/* Bottom edge — tiny vertical tick marks */
+.page-frame-texture::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 32px;
+  right: 32px;
+  height: 6px;
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(49, 38, 59, 0.18) 0px,
+    rgba(49, 38, 59, 0.18) 0.5px,
+    transparent 0.5px,
+    transparent 16px
+  );
+  mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+}
+
+/* Left edge — tiny horizontal tick marks */
+.page-frame-ticks-left {
+  position: absolute;
+  top: 32px;
+  bottom: 32px;
+  left: -1px;
+  width: 6px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(49, 38, 59, 0.18) 0px,
+    rgba(49, 38, 59, 0.18) 0.5px,
+    transparent 0.5px,
+    transparent 16px
+  );
+  mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+}
+
+/* Right edge — tiny horizontal tick marks */
+.page-frame-ticks-right {
+  position: absolute;
+  top: 32px;
+  bottom: 32px;
+  right: -1px;
+  width: 6px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(49, 38, 59, 0.18) 0px,
+    rgba(49, 38, 59, 0.18) 0.5px,
+    transparent 0.5px,
+    transparent 16px
+  );
+  mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+}
+
+/* Corner brackets — larger, sharp architectural style */
+.page-frame::before,
+.page-frame::after {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: rgba(49, 38, 59, 0.45);
+  border-style: solid;
+}
+
+.page-frame::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+
+.page-frame::after {
+  top: -1px;
+  right: -1px;
+  border-width: 2px 2px 0 0;
+}
+
+.page-frame-bottom::before,
+.page-frame-bottom::after {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: rgba(49, 38, 59, 0.45);
+  border-style: solid;
+}
+
+.page-frame-bottom::before {
+  bottom: -1px;
+  left: -1px;
+  border-width: 0 0 2px 2px;
+}
+
+.page-frame-bottom::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+/* ========================================
+   CTA CORNER BRACKETS — Architectural drawing style
+   ======================================== */
+.cta-brackets {
+  position: relative;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Inner brackets (always visible) */
+.cta-brackets::before,
+.cta-brackets::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: rgba(49, 38, 59, 0.3);
+  border-style: solid;
+  pointer-events: none;
+  transition: border-color 0.25s ease;
+}
+
+.cta-brackets::before {
+  top: -3px;
+  left: -3px;
+  border-width: 1.5px 0 0 1.5px;
+}
+
+.cta-brackets::after {
+  top: -3px;
+  right: -3px;
+  border-width: 1.5px 1.5px 0 0;
+}
+
+.cta-brackets-inner::before,
+.cta-brackets-inner::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: rgba(49, 38, 59, 0.3);
+  border-style: solid;
+  pointer-events: none;
+  transition: border-color 0.25s ease;
+}
+
+.cta-brackets-inner::before {
+  bottom: -3px;
+  left: -3px;
+  border-width: 0 0 1.5px 1.5px;
+}
+
+.cta-brackets-inner::after {
+  bottom: -3px;
+  right: -3px;
+  border-width: 0 1.5px 1.5px 0;
+}
+
+/* Outer brackets (visible on hover only) */
+.cta-brackets-outer::before,
+.cta-brackets-outer::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: rgba(49, 38, 59, 0);
+  border-style: solid;
+  pointer-events: none;
+  transition: border-color 0.25s ease, top 0.25s ease, left 0.25s ease, right 0.25s ease, bottom 0.25s ease;
+}
+
+.cta-brackets-outer::before {
+  top: -8px;
+  left: -8px;
+  border-width: 1px 0 0 1px;
+}
+
+.cta-brackets-outer::after {
+  top: -8px;
+  right: -8px;
+  border-width: 1px 1px 0 0;
+}
+
+.cta-brackets-outer-bottom::before,
+.cta-brackets-outer-bottom::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: rgba(49, 38, 59, 0);
+  border-style: solid;
+  pointer-events: none;
+  transition: border-color 0.25s ease, bottom 0.25s ease, left 0.25s ease, right 0.25s ease;
+}
+
+.cta-brackets-outer-bottom::before {
+  bottom: -8px;
+  left: -8px;
+  border-width: 0 0 1px 1px;
+}
+
+.cta-brackets-outer-bottom::after {
+  bottom: -8px;
+  right: -8px;
+  border-width: 0 1px 1px 0;
+}
+
+/* Hover: scale, shadow, darken inner, reveal outer */
+.cta-brackets:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 20px rgba(49, 38, 59, 0.2);
+}
+
+.cta-brackets:hover::before,
+.cta-brackets:hover::after {
+  border-color: rgba(49, 38, 59, 0.55);
+}
+
+.cta-brackets:hover .cta-brackets-inner::before,
+.cta-brackets:hover .cta-brackets-inner::after {
+  border-color: rgba(49, 38, 59, 0.55);
+}
+
+.cta-brackets:hover .cta-brackets-outer::before,
+.cta-brackets:hover .cta-brackets-outer::after {
+  border-color: rgba(49, 38, 59, 0.25);
+}
+
+.cta-brackets:hover .cta-brackets-outer-bottom::before,
+.cta-brackets:hover .cta-brackets-outer-bottom::after {
+  border-color: rgba(49, 38, 59, 0.25);
+}
+
+/* ========================================
+   PAPER SPECKLE UTILITY — Cards & sections (3% opacity)
+   ======================================== */
+.paper-speckle {
+  position: relative;
+}
+
+.paper-speckle::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* Stronger speckle for dark sections (6% opacity) */
+.paper-speckle-dark {
+  position: relative;
+}
+
+.paper-speckle-dark::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* Proof section speckle (4% opacity) */
+.paper-speckle-proof {
+  position: relative;
+}
+
+.paper-speckle-proof::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* ========================================
+   RADIAL GLOW — Soft depth accents (hex.tech-inspired)
+   ======================================== */
+.glow-hero {
+  position: relative;
+}
+
+.glow-hero::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 60%;
+  background: radial-gradient(ellipse at center, rgba(245, 192, 192, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glow-dark {
+  position: relative;
+}
+
+.glow-dark::after {
+  content: "";
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 50%;
+  background: radial-gradient(ellipse at center, rgba(164, 119, 178, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ========================================
+   HATCHED LABEL — Diagonal stripe background for technical labels
+   ======================================== */
+.hatched-label {
+  position: relative;
+  overflow: hidden;
+}
+
+.hatched-label::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 3px,
+    currentColor 3px,
+    currentColor 3.5px
+  );
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+/* ========================================
+   SCROLL REVEAL ANIMATION
+   ======================================== */
+.reveal-hidden {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ========================================
+   DARK PRODUCT PAGE — Cursor CMO (inverted MultiplAI palette)
+   ======================================== */
+
+/* Override body overlays when dark page is active */
+body:has(.dark-product-page) {
+  background: #14141C;
+}
+
+body:has(.dark-product-page)::before {
+  /* Paper grain — lighter on dark */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+body:has(.dark-product-page)::after {
+  /* Dot grid — light dots on dark */
+  background-image: radial-gradient(circle, rgba(247,242,240,0.12) 0.5px, transparent 0.5px);
+  opacity: 0.045;
+}
+
+/* Page frame — light borders on dark */
+body:has(.dark-product-page) .page-frame {
+  border-color: rgba(247, 242, 240, 0.1);
+  box-shadow:
+    inset 0 0 0 1px rgba(247, 242, 240, 0.02),
+    inset 0 0 40px rgba(247, 242, 240, 0.01);
+}
+
+body:has(.dark-product-page) .page-frame::before,
+body:has(.dark-product-page) .page-frame::after {
+  border-color: rgba(247, 242, 240, 0.25);
+}
+
+body:has(.dark-product-page) .page-frame-bottom::before,
+body:has(.dark-product-page) .page-frame-bottom::after {
+  border-color: rgba(247, 242, 240, 0.25);
+}
+
+body:has(.dark-product-page) .page-frame-texture::before,
+body:has(.dark-product-page) .page-frame-texture::after {
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(247, 242, 240, 0.1) 0px,
+    rgba(247, 242, 240, 0.1) 0.5px,
+    transparent 0.5px,
+    transparent 16px
+  );
+}
+
+body:has(.dark-product-page) .page-frame-ticks-left,
+body:has(.dark-product-page) .page-frame-ticks-right {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(247, 242, 240, 0.1) 0px,
+    rgba(247, 242, 240, 0.1) 0.5px,
+    transparent 0.5px,
+    transparent 16px
+  );
+}
+
+/* ── Dark card ── */
+.dark-card {
+  background: rgba(247, 242, 240, 0.03);
+  border: 1px solid rgba(247, 242, 240, 0.08);
+  border-radius: 4px;
+  padding: 28px;
+  position: relative;
+}
+
+.dark-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* ── Dark dot grids ── */
+.dark-dot-grid-center {
+  position: relative;
+}
+.dark-dot-grid-center::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(247,242,240,0.1) 0.4px, transparent 0.4px);
+  background-size: 16px 16px;
+  mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 0%, transparent 70%);
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dark-dot-grid-top-fade {
+  position: relative;
+}
+.dark-dot-grid-top-fade::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, rgba(247,242,240,0.08) 0.35px, transparent 0.35px),
+    linear-gradient(to right, rgba(247,242,240,0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(247,242,240,0.02) 1px, transparent 1px);
+  background-size: 20px 20px, 40px 40px, 40px 40px;
+  mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 80%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 80%);
+  opacity: 0.07;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dark-dot-grid-edges {
+  position: relative;
+}
+.dark-dot-grid-edges::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, rgba(247,242,240,0.08) 0.3px, transparent 0.3px),
+    linear-gradient(to bottom, rgba(247,242,240,0.015) 1px, transparent 1px);
+  background-size: 14px 14px, 14px 14px;
+  mask-image: linear-gradient(to right,
+    black 0%, transparent 15%,
+    transparent 85%, black 100%);
+  -webkit-mask-image: linear-gradient(to right,
+    black 0%, transparent 15%,
+    transparent 85%, black 100%);
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dark-dot-grid-corner {
+  position: relative;
+}
+.dark-dot-grid-corner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(247,242,240,0.1) 0.5px, transparent 0.5px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 70% 70% at 85% 80%, black 0%, transparent 60%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 70% at 85% 80%, black 0%, transparent 60%);
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Dark glows ── */
+.dark-glow-hero {
+  position: relative;
+}
+.dark-glow-hero::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 60%;
+  background: radial-gradient(ellipse at center, rgba(164, 119, 178, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dark-glow-waitlist {
+  position: relative;
+}
+.dark-glow-waitlist::before {
+  content: "";
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 50%;
+  background: radial-gradient(ellipse at center, rgba(245, 192, 192, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Dark CTA brackets ── */
+.cta-brackets-dark {
+  position: relative;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.cta-brackets-dark::before,
+.cta-brackets-dark::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: rgba(245, 192, 192, 0.3);
+  border-style: solid;
+  pointer-events: none;
+  transition: border-color 0.25s ease;
+}
+
+.cta-brackets-dark::before {
+  top: -3px;
+  left: -3px;
+  border-width: 1.5px 0 0 1.5px;
+}
+
+.cta-brackets-dark::after {
+  top: -3px;
+  right: -3px;
+  border-width: 1.5px 1.5px 0 0;
+}
+
+.cta-brackets-dark:hover {
+  transform: scale(1.05);
+}
+
+.cta-brackets-dark:hover::before,
+.cta-brackets-dark:hover::after {
+  border-color: rgba(245, 192, 192, 0.6);
+}
