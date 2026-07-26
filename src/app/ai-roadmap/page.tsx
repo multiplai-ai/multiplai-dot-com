@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import {
-  ArrowIcon,
   BrandMark,
   CheckIcon,
-  InlineCta,
   SiteHeader,
 } from "@/components/landing/SiteComponents";
-import ConsultLauncher from "./ConsultLauncher";
+import ConsultLauncher, {
+  ConsultInlineCta,
+  ConsultStartButton,
+} from "./ConsultLauncher";
 import "../landing-pages.css";
 
 export const metadata: Metadata = {
@@ -75,9 +76,7 @@ export default function AiRoadmapPage() {
             to stop doing so the important work can move.
           </p>
           <div className="hero-actions">
-            <a className="button button-rose" href="#start-consult">
-              Start the free consult <ArrowIcon />
-            </a>
+            <ConsultStartButton label="Start the free consult" />
             <span>Free · 8–10 minutes · No calendar booking</span>
           </div>
         </div>
@@ -147,11 +146,10 @@ export default function AiRoadmapPage() {
         </div>
       </section>
 
-      <InlineCta
+      <ConsultInlineCta
         eyebrow="Free · 8–10 minutes"
         headline="Turn the AI backlog into three defensible priorities."
         body="Answer the questions when it works for you. We will turn the evidence into a human-reviewed roadmap for your business."
-        href="#start-consult"
         label="Start the free consult"
       />
 
@@ -175,11 +173,10 @@ export default function AiRoadmapPage() {
         </p>
       </section>
 
-      <InlineCta
+      <ConsultInlineCta
         eyebrow="This is the deliverable"
         headline="Get the roadmap—not another quiz score."
         body="Walk away with the systems to prioritize, the work to defer, the sequence to follow, and the signals to measure."
-        href="#start-consult"
         label="Get my free roadmap"
         dark
       />
@@ -250,11 +247,10 @@ export default function AiRoadmapPage() {
         </ol>
       </section>
 
-      <InlineCta
+      <ConsultInlineCta
         eyebrow="No calendar booking"
         headline="Start when you have ten focused minutes."
         body="The consultation is on demand, the roadmap is reviewed by a person, and there is no required sales call."
-        href="#start-consult"
         label="Begin the consult"
       />
 
