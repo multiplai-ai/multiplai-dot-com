@@ -266,6 +266,7 @@
   font-weight: 700;
   line-height: 1.2;
   text-decoration: none;
+  cursor: pointer;
   transition:
     background 160ms ease,
     border-color 160ms ease,
@@ -1016,9 +1017,43 @@ summary:focus-visible {
   opacity: 0.7;
 }
 
-.consult-launcher elevenlabs-convai {
-  display: block;
-  min-height: 360px;
+.consult-session {
+  width: min(100%, 520px);
+  padding: 22px;
+  border: 1px solid rgba(247, 242, 240, 0.22);
+  background: rgba(247, 242, 240, 0.06);
+}
+
+.consult-status {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 16px;
+  color: var(--paper);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.consult-status .status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--rose);
+  box-shadow: 0 0 0 5px rgba(245, 192, 192, 0.14);
+}
+
+.consult-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.button-secondary-dark {
+  border-color: rgba(247, 242, 240, 0.4);
+  background: transparent;
+  color: var(--paper);
 }
 
 .consult-error {
