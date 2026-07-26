@@ -9,6 +9,22 @@ import { useCallback, useEffect, useState } from "react";
 const sessionEndpoint =
   "https://agency-ai-impact-consult.vercel.app/api/consult/session";
 const startConsultEvent = "multiplai:start-consult";
+const visitorStorageKey = "multiplai_consult_visitor_id";
+
+function consultVisitorId() {
+  const createId = () =>
+    globalThis.crypto?.randomUUID?.().replaceAll("-", "") ||
+    `visitor_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  try {
+    const existing = window.localStorage.getItem(visitorStorageKey);
+    if (existing) return existing;
+    const created = createId();
+    window.localStorage.setItem(visitorStorageKey, created);
+    return created;
+  } catch {
+    return createId();
+  }
+}
 
 function Arrow() {
   return <span aria-hidden="true">→</span>;
@@ -93,14 +109,19 @@ function ConsultControls() {
       const response = await fetch(sessionEndpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
+        body: JSON.stringify({ visitor_id: consultVisitorId() }),
       });
       const payload = (await response.json()) as {
         signed_url?: string;
         error?: string;
+        reason?: string;
       };
       if (!response.ok || !payload.signed_url) {
         throw new Error(
-          response.status === 429
+          response.status === 429 &&
+            payload.reason === "per_contact_daily_limit"
+            ? "You have already started two consultations today. Please try again tomorrow."
+            : response.status === 429
             ? "We have reached today's consultation capacity. Please try again tomorrow."
             : "The voice consultation is temporarily unavailable.",
         );
