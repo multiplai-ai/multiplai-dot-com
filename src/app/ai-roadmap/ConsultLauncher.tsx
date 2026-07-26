@@ -8,6 +8,7 @@ import {
   type FormEvent,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -15,6 +16,23 @@ const sessionEndpoint =
   "https://agency-ai-impact-consult.vercel.app/api/consult/session";
 const startConsultEvent = "multiplai:start-consult";
 const visitorStorageKey = "multiplai_consult_visitor_id";
+
+type ConsultMode = "voice" | "chat";
+type ChatMessage = {
+  role: "user" | "agent";
+  text: string;
+};
+
+function appendUniqueMessage(
+  messages: ChatMessage[],
+  next: ChatMessage,
+) {
+  const previous = messages.at(-1);
+  if (previous?.role === next.role && previous.text === next.text) {
+    return messages;
+  }
+  return [...messages, next];
+}
 
 function consultVisitorId() {
   const createId = () =>
@@ -86,13 +104,21 @@ export function ConsultInlineCta({
 function ConsultControls() {
   const [error, setError] = useState("");
   const [intakeOpen, setIntakeOpen] = useState(false);
+  const [modeChoiceOpen, setModeChoiceOpen] = useState(false);
+  const [consultMode, setConsultMode] = useState<ConsultMode | null>(null);
+  const [launchingMode, setLaunchingMode] = useState<ConsultMode | null>(null);
   const [respondentName, setRespondentName] = useState("");
   const [workEmail, setWorkEmail] = useState("");
+  const [chatDraft, setChatDraft] = useState("");
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const chatLogRef = useRef<HTMLDivElement>(null);
   const {
     endSession,
     isListening,
     isMuted,
     isSpeaking,
+    sendUserActivity,
+    sendUserMessage,
     setMuted,
     startSession,
     status,
@@ -100,21 +126,51 @@ function ConsultControls() {
     onConnect: () => {
       setError("");
       setIntakeOpen(false);
+      setModeChoiceOpen(false);
+      setLaunchingMode(null);
+    },
+    onMessage: ({ message, role }) => {
+      const text = message.trim();
+      if (!text || (role !== "user" && role !== "agent")) return;
+      setChatMessages((messages) =>
+        appendUniqueMessage(messages, { role, text }),
+      );
     },
     onError: (message) =>
-      setError(message || "The voice consultation could not start."),
+      setError(message || "The consultation could not start."),
   });
 
   const openIntake = useCallback(() => {
     if (status !== "disconnected") return;
     setError("");
     setIntakeOpen(true);
+    setModeChoiceOpen(false);
   }, [status]);
 
-  const startConsult = useCallback(async (event?: FormEvent) => {
+  const prepareModeChoice = useCallback((event: FormEvent) => {
     event?.preventDefault();
+    const name = respondentName.trim().replace(/\s+/g, " ");
+    const email = workEmail.trim().toLowerCase();
+    if (
+      name.length < 2 ||
+      name.length > 120 ||
+      email.length > 254 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
+      setError("Enter your name and a valid email address for the report.");
+      return;
+    }
+    setRespondentName(name);
+    setWorkEmail(email);
+    setError("");
+    setIntakeOpen(false);
+    setModeChoiceOpen(true);
+  }, [respondentName, workEmail]);
+
+  const startConsult = useCallback(async (mode: ConsultMode) => {
     if (status !== "disconnected") return;
     setError("");
+    setLaunchingMode(mode);
     try {
       const name = respondentName.trim().replace(/\s+/g, " ");
       const email = workEmail.trim().toLowerCase();
@@ -128,13 +184,15 @@ function ConsultControls() {
           "Enter your name and a valid email address for the report.",
         );
       }
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error("This browser does not support microphone access.");
+      if (mode === "voice") {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("This browser does not support microphone access.");
+        }
+        const permissionStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        permissionStream.getTracks().forEach((track) => track.stop());
       }
-      const permissionStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
-      permissionStream.getTracks().forEach((track) => track.stop());
 
       const visitorId = consultVisitorId();
       const response = await fetch(sessionEndpoint, {
@@ -144,11 +202,13 @@ function ConsultControls() {
           visitor_id: visitorId,
           respondent_name: name,
           work_email: email,
+          consult_mode: mode,
         }),
       });
       const payload = (await response.json()) as {
         signed_url?: string;
         admission_id?: string;
+        consult_mode?: ConsultMode;
         error?: string;
         reason?: string;
       };
@@ -161,12 +221,19 @@ function ConsultControls() {
             ? "We have reached today's consultation capacity. Please try again tomorrow."
             : response.status === 400
               ? "Enter your name and a valid email address for the report."
-            : "The voice consultation is temporarily unavailable.",
+            : "The consultation is temporarily unavailable.",
         );
       }
+      setConsultMode(mode);
+      setChatMessages([]);
       await startSession({
         signedUrl: payload.signed_url,
         connectionType: "websocket",
+        textOnly: mode === "chat",
+        overrides:
+          mode === "chat"
+            ? { conversation: { textOnly: true } }
+            : undefined,
         userId: visitorId,
         dynamicVariables: {
           intake_mode: "prospect",
@@ -180,6 +247,7 @@ function ConsultControls() {
           work_email: email,
           delivery_preference: "email_confirmed",
           consult_admission_id: payload.admission_id || "",
+          consult_mode: mode,
         },
       });
     } catch (caught) {
@@ -191,18 +259,100 @@ function ConsultControls() {
                 caught.message.startsWith("Enter your name") ||
                 caught.message.startsWith("You have already") ||
                 caught.message.startsWith("We have reached") ||
-                caught.message.startsWith("The voice consultation"))
+                caught.message.startsWith("The consultation"))
             ? caught.message
-            : "The voice consultation is temporarily unavailable.";
+            : "The consultation is temporarily unavailable.";
+      setConsultMode(null);
+      setLaunchingMode(null);
       setError(message);
     }
   }, [respondentName, startSession, status, workEmail]);
+
+  useEffect(() => {
+    const log = chatLogRef.current;
+    if (log) log.scrollTop = log.scrollHeight;
+  }, [chatMessages]);
+
+  function sendChatMessage(event: FormEvent) {
+    event.preventDefault();
+    const text = chatDraft.trim();
+    if (!text || status !== "connected") return;
+    setChatMessages((messages) =>
+      appendUniqueMessage(messages, { role: "user", text }),
+    );
+    sendUserMessage(text);
+    setChatDraft("");
+  }
 
   useEffect(() => {
     const handleStart = () => openIntake();
     window.addEventListener(startConsultEvent, handleStart);
     return () => window.removeEventListener(startConsultEvent, handleStart);
   }, [openIntake]);
+
+  if (status === "connected" && consultMode === "chat") {
+    return (
+      <section className="consult-chat" aria-label="AI consultation chat">
+        <div className="consult-chat-header">
+          <div>
+            <p className="eyebrow eyebrow-light">Text consultation</p>
+            <h3>Chat with your AI adviser</h3>
+            <p>Same assessment. Same human-reviewed plan.</p>
+          </div>
+          <button
+            className="button button-secondary-dark"
+            type="button"
+            onClick={() => endSession()}
+          >
+            End chat
+          </button>
+        </div>
+        <div
+          className="consult-chat-log"
+          ref={chatLogRef}
+          aria-live="polite"
+        >
+          {chatMessages.length ? (
+            chatMessages.map((message, index) => (
+              <div
+                className={`consult-message consult-message-${message.role}`}
+                key={`${message.role}-${index}-${message.text.slice(0, 20)}`}
+              >
+                <span>{message.role === "agent" ? "AI adviser" : "You"}</span>
+                <p>{message.text}</p>
+              </div>
+            ))
+          ) : (
+            <p className="consult-chat-waiting">
+              Your adviser is joining the chat…
+            </p>
+          )}
+        </div>
+        <form className="consult-chat-compose" onSubmit={sendChatMessage}>
+          <label className="sr-only" htmlFor="consult-chat-message">
+            Your message
+          </label>
+          <textarea
+            id="consult-chat-message"
+            value={chatDraft}
+            onChange={(event) => {
+              setChatDraft(event.target.value);
+              sendUserActivity();
+            }}
+            placeholder="Type your response…"
+            rows={2}
+          />
+          <button
+            className="button button-rose"
+            type="submit"
+            disabled={!chatDraft.trim()}
+          >
+            Send <Arrow />
+          </button>
+        </form>
+      </section>
+    );
+  }
 
   if (status === "connected") {
     return (
@@ -235,15 +385,69 @@ function ConsultControls() {
     );
   }
 
+  if (modeChoiceOpen) {
+    return (
+      <section className="consult-mode-choice">
+        <div>
+          <p className="eyebrow eyebrow-light">Choose how to continue</p>
+          <h3>Talk now or use silent chat.</h3>
+          <p>
+            Both options use the same AI adviser and produce the same
+            human-reviewed plan.
+          </p>
+        </div>
+        <div className="consult-mode-actions">
+          <button
+            className="button button-rose"
+            type="button"
+            onClick={() => void startConsult("voice")}
+            disabled={Boolean(launchingMode) || status === "connecting"}
+          >
+            {launchingMode === "voice"
+              ? "Connecting voice…"
+              : "Talk with the adviser"}{" "}
+            <Arrow />
+          </button>
+          <button
+            className="button button-secondary-dark"
+            type="button"
+            onClick={() => void startConsult("chat")}
+            disabled={Boolean(launchingMode) || status === "connecting"}
+          >
+            {launchingMode === "chat"
+              ? "Opening chat…"
+              : "Chat instead"}{" "}
+            <Arrow />
+          </button>
+        </div>
+        <button
+          className="consult-edit-details"
+          type="button"
+          onClick={() => {
+            setModeChoiceOpen(false);
+            setIntakeOpen(true);
+          }}
+        >
+          Edit name or report email
+        </button>
+        {error ? (
+          <p className="consult-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </section>
+    );
+  }
+
   if (intakeOpen) {
     return (
-      <form className="consult-intake" onSubmit={startConsult}>
+      <form className="consult-intake" onSubmit={prepareModeChoice}>
         <div>
           <p className="eyebrow eyebrow-light">Your report details</p>
           <h3>Where should we send your plan?</h3>
           <p>
             Enter the address once here. Your AI adviser will confirm it, not
-            ask you to spell it over voice.
+            ask you to spell it during the consultation.
           </p>
         </div>
         <label htmlFor="consult-name">
@@ -281,10 +485,7 @@ function ConsultControls() {
           type="submit"
           disabled={status === "connecting"}
         >
-          {status === "connecting"
-            ? "Connecting your consult…"
-            : "Continue to voice consult"}{" "}
-          {status !== "connecting" ? <Arrow /> : null}
+          Choose talk or chat <Arrow />
         </button>
         <p className="consult-privacy">
           We use these details to personalize the consultation and deliver the
