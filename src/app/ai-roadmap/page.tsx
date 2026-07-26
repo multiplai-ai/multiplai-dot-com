@@ -6,6 +6,7 @@ import {
   InlineCta,
   SiteHeader,
 } from "@/components/landing/SiteComponents";
+import ConsultLauncher from "./ConsultLauncher";
 import "../landing-pages.css";
 
 export const metadata: Metadata = {
@@ -13,13 +14,13 @@ export const metadata: Metadata = {
   description:
     "Complete an 8–10 minute AI consultation and receive a human-reviewed plan showing which AI-enabled systems to prioritize and how to measure impact.",
   alternates: {
-    canonical: "https://www.multiplaigrowth.com/ai-roadmap",
+    canonical: "https://www.multiplai-growth.com/ai-roadmap",
   },
   openGraph: {
     title: "Get your free personalized AI implementation roadmap",
     description:
       "Find the three AI-enabled systems to prioritize, what to stop doing, and how to measure business impact.",
-    url: "https://www.multiplaigrowth.com/ai-roadmap",
+    url: "https://www.multiplai-growth.com/ai-roadmap",
     type: "website",
   },
 };
@@ -357,17 +358,7 @@ export default function AiRoadmapPage() {
             sequence, and a measurement plan built around your actual business.
           </p>
         </div>
-        <a
-          className="button button-rose"
-          href="mailto:hanna@multiplai-growth.com?subject=Free%20AI%20Implementation%20Consult%20early%20access"
-        >
-          Request early access <ArrowIcon />
-        </a>
-        <p className="preview-note" id="consult-preview-note">
-          The public voice consult is in final release QA. Request early access
-          and Hanna will send the live destination as soon as the release gate
-          clears.
-        </p>
+        <ConsultLauncher />
       </section>
 
       <footer className="site-footer site-footer-dark">

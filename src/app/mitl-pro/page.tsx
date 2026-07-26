@@ -18,13 +18,13 @@ export const metadata: Metadata = {
   description:
     "Get the MITL MCP server, five marketing skill suites, future releases, the Pro archive, and a 20-minute install call for $150/year.",
   alternates: {
-    canonical: "https://www.multiplaigrowth.com/mitl-pro",
+    canonical: "https://www.multiplai-growth.com/mitl-pro",
   },
   openGraph: {
     title: "Install your AI marketing operating system | MITL Pro",
     description:
       "One connector, five skill suites, every future release, the Pro archive, and a 20-minute install call for $150/year.",
-    url: "https://www.multiplaigrowth.com/mitl-pro",
+    url: "https://www.multiplai-growth.com/mitl-pro",
     type: "website",
   },
 };
