@@ -4,7 +4,12 @@ import {
   ConversationProvider,
   useConversation,
 } from "@elevenlabs/react";
-import { useCallback, useEffect, useState } from "react";
+import {
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
 const sessionEndpoint =
   "https://agency-ai-impact-consult.vercel.app/api/consult/session";
@@ -80,6 +85,9 @@ export function ConsultInlineCta({
 
 function ConsultControls() {
   const [error, setError] = useState("");
+  const [intakeOpen, setIntakeOpen] = useState(false);
+  const [respondentName, setRespondentName] = useState("");
+  const [workEmail, setWorkEmail] = useState("");
   const {
     endSession,
     isListening,
@@ -89,15 +97,37 @@ function ConsultControls() {
     startSession,
     status,
   } = useConversation({
-    onConnect: () => setError(""),
+    onConnect: () => {
+      setError("");
+      setIntakeOpen(false);
+    },
     onError: (message) =>
       setError(message || "The voice consultation could not start."),
   });
 
-  const startConsult = useCallback(async () => {
+  const openIntake = useCallback(() => {
+    if (status !== "disconnected") return;
+    setError("");
+    setIntakeOpen(true);
+  }, [status]);
+
+  const startConsult = useCallback(async (event?: FormEvent) => {
+    event?.preventDefault();
     if (status !== "disconnected") return;
     setError("");
     try {
+      const name = respondentName.trim().replace(/\s+/g, " ");
+      const email = workEmail.trim().toLowerCase();
+      if (
+        name.length < 2 ||
+        name.length > 120 ||
+        email.length > 254 ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      ) {
+        throw new Error(
+          "Enter your name and a valid email address for the report.",
+        );
+      }
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("This browser does not support microphone access.");
       }
@@ -106,13 +136,19 @@ function ConsultControls() {
       });
       permissionStream.getTracks().forEach((track) => track.stop());
 
+      const visitorId = consultVisitorId();
       const response = await fetch(sessionEndpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ visitor_id: consultVisitorId() }),
+        body: JSON.stringify({
+          visitor_id: visitorId,
+          respondent_name: name,
+          work_email: email,
+        }),
       });
       const payload = (await response.json()) as {
         signed_url?: string;
+        admission_id?: string;
         error?: string;
         reason?: string;
       };
@@ -123,12 +159,28 @@ function ConsultControls() {
             ? "You have already started two consultations today. Please try again tomorrow."
             : response.status === 429
             ? "We have reached today's consultation capacity. Please try again tomorrow."
+            : response.status === 400
+              ? "Enter your name and a valid email address for the report."
             : "The voice consultation is temporarily unavailable.",
         );
       }
-      startSession({
+      await startSession({
         signedUrl: payload.signed_url,
         connectionType: "websocket",
+        userId: visitorId,
+        dynamicVariables: {
+          intake_mode: "prospect",
+          caller_phone: "unavailable",
+          caller_fingerprint: visitorId,
+          resume_context: "none",
+          resume_conversation_id: "",
+          sms_delivery_enabled: "false",
+          online_intake_captured: "true",
+          respondent_name: name,
+          work_email: email,
+          delivery_preference: "email_confirmed",
+          consult_admission_id: payload.admission_id || "",
+        },
       });
     } catch (caught) {
       const message =
@@ -136,19 +188,21 @@ function ConsultControls() {
           ? "Microphone permission is required to start the voice consultation."
           : caught instanceof Error &&
               (caught.message.startsWith("This browser") ||
+                caught.message.startsWith("Enter your name") ||
+                caught.message.startsWith("You have already") ||
                 caught.message.startsWith("We have reached") ||
                 caught.message.startsWith("The voice consultation"))
             ? caught.message
             : "The voice consultation is temporarily unavailable.";
       setError(message);
     }
-  }, [startSession, status]);
+  }, [respondentName, startSession, status, workEmail]);
 
   useEffect(() => {
-    const handleStart = () => void startConsult();
+    const handleStart = () => openIntake();
     window.addEventListener(startConsultEvent, handleStart);
     return () => window.removeEventListener(startConsultEvent, handleStart);
-  }, [startConsult]);
+  }, [openIntake]);
 
   if (status === "connected") {
     return (
@@ -181,18 +235,78 @@ function ConsultControls() {
     );
   }
 
+  if (intakeOpen) {
+    return (
+      <form className="consult-intake" onSubmit={startConsult}>
+        <div>
+          <p className="eyebrow eyebrow-light">Your report details</p>
+          <h3>Where should we send your plan?</h3>
+          <p>
+            Enter the address once here. Your AI adviser will confirm it, not
+            ask you to spell it over voice.
+          </p>
+        </div>
+        <label htmlFor="consult-name">
+          Name
+          <input
+            id="consult-name"
+            name="name"
+            type="text"
+            autoComplete="name"
+            value={respondentName}
+            onChange={(event) => setRespondentName(event.target.value)}
+            required
+            minLength={2}
+            maxLength={120}
+            disabled={status === "connecting"}
+          />
+        </label>
+        <label htmlFor="consult-email">
+          Email for your report
+          <input
+            id="consult-email"
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            value={workEmail}
+            onChange={(event) => setWorkEmail(event.target.value)}
+            required
+            maxLength={254}
+            disabled={status === "connecting"}
+          />
+        </label>
+        <button
+          className="button button-rose"
+          type="submit"
+          disabled={status === "connecting"}
+        >
+          {status === "connecting"
+            ? "Connecting your consult…"
+            : "Continue to voice consult"}{" "}
+          {status !== "connecting" ? <Arrow /> : null}
+        </button>
+        <p className="consult-privacy">
+          We use these details to personalize the consultation and deliver the
+          human-reviewed report you request.
+        </p>
+        {error ? (
+          <p className="consult-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </form>
+    );
+  }
+
   return (
     <div className="consult-launcher">
       <button
         className="button button-rose"
         type="button"
-        onClick={() => void startConsult()}
-        disabled={status === "connecting"}
+        onClick={openIntake}
       >
-        {status === "connecting"
-          ? "Connecting your consult…"
-          : "Start the free consult"}{" "}
-        {status !== "connecting" ? <Arrow /> : null}
+        Start the free consult <Arrow />
       </button>
       {error ? (
         <p className="consult-error" role="alert">
